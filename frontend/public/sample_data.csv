@@ -1,0 +1,9 @@
+full_name,email,phone,dob,skills
+John Doe,john.doe@gmail.com,555-1234,1990-05-15,"Python, JavaScript"
+Jane Smith,jane.smith@example.com,(555) 5678,1985-12-20,"React, Node.js, Python"
+Bob Johnson,bob@yahoo.com,555 9999,1992-03-10,"Java, C++"
+Alice Brown,alice.brown@gmail,555-8765,1988-07-22,"Python, Machine Learning, SQL"
+Charlie Wilson,charlie.wilson@outlook.com,5559876,1995-01-30,"JavaScript, TypeScript, CSS"
+Diana Lee,diana_lee@gmail.com,(555)1111,1991-09-14,"Data Science, Python, R"
+Edward Davis,edward@company.com,555-2222,1987-11-05,"DevOps, Docker, Kubernetes"
+Fiona Martinez,fiona.martinez@example.com,555 3333,1993-06-18,"Frontend, React, Vue"

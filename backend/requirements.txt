@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pydantic
+pydantic[email]
+python-multipart
+
+pandas
+openpyxl
+pdfplumber
+python-docx
+
+torch
+transformers
+accelerate
+bitsandbytes
+sentencepiece
