@@ -1,12 +1,13 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-MODEL_NAME = "google/gemma-2b-it"
+MODEL_NAME = "google/gemma-3-270m"  # Gemma 3 270M - ultra lightweight
 
 # Use CPU to avoid MPS memory issues with large attention buffers
 device = "cpu"
 
 print(f"Using device: {device}")
+print(f"Loading model: {MODEL_NAME}")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
