@@ -1,9 +1,29 @@
 export default function OutputViewer({ data }) {
   if (!data) return null;
 
+  const handleDownload = () => {
+    if (data.format === "csv") {
+      const blob = new Blob([data.data], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cleaned_data.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cleaned_data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <div>
-      <h3>Cleaned Output</h3>
+      <h3>Cleaned Output ({data.format?.toUpperCase() || "JSON"})</h3>
       <p>
         Records cleaned: {data.count} 
         {data.total_rows > data.processed && (
@@ -12,6 +32,21 @@ export default function OutputViewer({ data }) {
           </span>
         )}
       </p>
+
+      <button 
+        onClick={handleDownload}
+        style={{
+          marginBottom: "15px",
+          padding: "8px 16px",
+          background: "#4CAF50",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+      >
+        ⬇️ Download {data.format?.toUpperCase() || "JSON"}
+      </button>
 
       <pre
         style={{
@@ -23,7 +58,10 @@ export default function OutputViewer({ data }) {
           borderRadius: "8px",
         }}
       >
-        {JSON.stringify(data.data, null, 2)}
+        {data.format === "csv" 
+          ? data.data 
+          : JSON.stringify(data.data, null, 2)
+        }
       </pre>
     </div>
   );

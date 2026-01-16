@@ -1,23 +1,31 @@
 from fastapi import FastAPI, UploadFile, File, Query
+from fastapi.responses import StreamingResponse
 from app.parser import parse_file
 from app.cleaner import clean_record
 from fastapi.middleware.cors import CORSMiddleware
+import csv
+import io
+import json
 
 app = FastAPI(title="Gemma Data Cleaner")
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Rows", "X-Processed", "X-Count"],
 )
 
 MAX_ROWS = 5  # Limit rows to process (CPU inference is slow)
 
 @app.post("/clean")
-async def clean(file: UploadFile = File(...)):
+async def clean(
+    file: UploadFile = File(...),
+    output_format: str = Query(default="json", description="Output format: json or csv")
+):
     content = await file.read()
 
     parsed = parse_file(
@@ -53,6 +61,26 @@ async def clean(file: UploadFile = File(...)):
         if cleaned:
             results.append(cleaned)
 
+    # Return CSV format if requested
+    if output_format.lower() == "csv" and results:
+        output = io.StringIO()
+        if results:
+            writer = csv.DictWriter(output, fieldnames=results[0].keys())
+            writer.writeheader()
+            writer.writerows(results)
+        
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=cleaned_data.csv",
+                "X-Total-Rows": str(total_rows),
+                "X-Processed": str(processed),
+                "X-Count": str(len(results))
+            }
+        )
+
+    # Default: return JSON
     return {
         "count": len(results),
         "total_rows": total_rows,
