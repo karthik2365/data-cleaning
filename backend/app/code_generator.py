@@ -190,10 +190,30 @@ def _generate_fallback_code(user_request: str, schema: dict = None) -> str:
     """
     Generate code without AI using keyword matching.
     Handles cleaning, analysis, and basic ML tasks.
+    ALWAYS applies standard cleaning first: remove duplicates, drop nulls, trim whitespace, lowercase.
     """
     request_lower = user_request.lower()
     code_lines = []
     columns = list(schema.keys()) if schema else []
+    
+    # =====================
+    # ALWAYS APPLY STANDARD CLEANING FIRST
+    # =====================
+    code_lines.append("# Standard cleaning operations")
+    code_lines.append("# 1. Remove duplicates")
+    code_lines.append("df = df.drop_duplicates()")
+    code_lines.append("")
+    code_lines.append("# 2. Drop null values")
+    code_lines.append("df = df.dropna()")
+    code_lines.append("")
+    code_lines.append("# 3. Trim whitespace from string columns")
+    code_lines.append("for col in df.select_dtypes(include=['object']).columns:")
+    code_lines.append("    df[col] = df[col].str.strip()")
+    code_lines.append("")
+    code_lines.append("# 4. Convert string columns to lowercase")
+    code_lines.append("for col in df.select_dtypes(include=['object']).columns:")
+    code_lines.append("    df[col] = df[col].str.lower()")
+    code_lines.append("")
     
     # =====================
     # ML / PREDICTION TASKS
@@ -241,6 +261,7 @@ def _generate_fallback_code(user_request: str, schema: dict = None) -> str:
         # Find mentioned columns
         keep_cols = [col for col in columns if col.lower() in request_lower]
         if keep_cols:
+            code_lines.append(f"# User requested: keep only specific columns")
             code_lines.append(f"df = df[[{', '.join([repr(c) for c in keep_cols])}]]")
             return "\n".join(code_lines)
     
@@ -250,28 +271,23 @@ def _generate_fallback_code(user_request: str, schema: dict = None) -> str:
     if any(x in request_lower for x in ['drop column', 'remove column', 'delete column']):
         drop_cols = [col for col in columns if col.lower() in request_lower]
         if drop_cols:
+            code_lines.append(f"# User requested: drop specific columns")
             code_lines.append(f"df = df.drop(columns={drop_cols})")
             return "\n".join(code_lines)
     
     # =====================
-    # CLEANING OPERATIONS
+    # ADDITIONAL USER-SPECIFIC OPERATIONS
     # =====================
-    if any(x in request_lower for x in ['drop null', 'remove null', 'drop na', 'remove na', 'drop missing', 'remove missing']):
-        code_lines.append("df = df.dropna()")
     
-    if any(x in request_lower for x in ['drop duplicate', 'remove duplicate']):
-        code_lines.append("df = df.drop_duplicates()")
-    
-    if any(x in request_lower for x in ['lowercase', 'lower case']):
-        code_lines.append("df = df.apply(lambda x: x.str.lower() if x.dtype == 'object' else x)")
-    
+    # Uppercase (if user specifically wants uppercase instead of lowercase)
     if any(x in request_lower for x in ['uppercase', 'upper case']):
-        code_lines.append("df = df.apply(lambda x: x.str.upper() if x.dtype == 'object' else x)")
+        code_lines.append("# User requested: convert to uppercase (overriding default lowercase)")
+        code_lines.append("for col in df.select_dtypes(include=['object']).columns:")
+        code_lines.append("    df[col] = df[col].str.upper()")
     
-    if any(x in request_lower for x in ['trim', 'strip', 'whitespace']):
-        code_lines.append("df = df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)")
-    
+    # Fill nulls instead of dropping (if user prefers filling)
     if 'fill' in request_lower and any(x in request_lower for x in ['null', 'na', 'missing']):
+        code_lines.append("# User requested: fill nulls instead of dropping")
         if 'zero' in request_lower or '0' in request_lower:
             code_lines.append("df = df.fillna(0)")
         elif 'empty' in request_lower or '""' in request_lower:
@@ -279,11 +295,7 @@ def _generate_fallback_code(user_request: str, schema: dict = None) -> str:
         else:
             code_lines.append("df = df.fillna(method='ffill')")
     
-    # If no operations detected, return minimal code
-    if len(code_lines) == 0:
-        code_lines.append("# No specific cleaning operation detected")
-        code_lines.append("df = df.copy()")
-    
+    # Return with standard cleaning already applied
     return "\n".join(code_lines)
 
 
