@@ -12,14 +12,14 @@ app = FastAPI(title="Gemma Data Cleaner")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5175", "http://127.0.0.1:5175"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Total-Rows", "X-Processed", "X-Count"],
 )
 
-MAX_ROWS = 5  # Limit rows to process (CPU inference is slow)
+# No row limit needed - deterministic cleaning is fast!
 
 @app.post("/clean")
 async def clean(
@@ -39,8 +39,8 @@ async def clean(
 
     if isinstance(parsed, list):
         total_rows = len(parsed)
-        # Limit to MAX_ROWS for CPU performance
-        for row in parsed[:MAX_ROWS]:
+        # Process ALL rows - no limit needed with deterministic cleaning
+        for row in parsed:
             cleaned = clean_record(row)
             processed += 1
             if cleaned:
