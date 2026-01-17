@@ -44,7 +44,7 @@ class RecordCleaner:
         
         value = str(value).strip()
         key_lower = key.lower()
-        
+
         # Apply type-specific cleaning based on column name
         if any(x in key_lower for x in ['email', 'mail', 'e-mail']):
             return self._clean_email(value)

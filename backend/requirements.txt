@@ -5,9 +5,11 @@ pydantic[email]
 python-multipart
 
 pandas
+numpy
 openpyxl
 pdfplumber
 python-docx
+scikit-learn
 
 torch
 transformers
