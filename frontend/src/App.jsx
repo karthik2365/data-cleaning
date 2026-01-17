@@ -1,17 +1,33 @@
 import { useState } from "react";
-import FileUpload from "./components/FileUpload";
-import OutputViewer from "./components/OutputViewer";
+import Features from "./components/features"
+import Footer from "./components/Footer"
+import Hero from "./components/hero"
+import HowItWorks from "./components/Howitworks"
+import Problem from "./components/Problem"
+import TechStack from "./components/Techstack"
+import WhyDifferent from "./components/Whydifferent"
+import DataCleaner from "./components/DataCleaner"
+import CTA from "./components/CTA.JSX";
 
-export default function App() {
-  const [result, setResult] = useState(null);
+function App() {
+  const [showCleaner, setShowCleaner] = useState(false);
+
+  if (showCleaner) {
+    return <DataCleaner onBack={() => setShowCleaner(false)} />;
+  }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "sans-serif" }}>
-      <h1>🧹 Gemma Data Cleaner</h1>
-      <p>Upload messy data → get clean JSON</p>
-
-      <FileUpload onResult={setResult} />
-      <OutputViewer data={result} />
+    <div className="min-h-screen bg-white text-black font-mono">
+      <Hero />
+      <Problem />
+      <HowItWorks />
+      <WhyDifferent />
+      <Features />
+      <TechStack />
+      <CTA onNavigate={() => setShowCleaner(true)} />
+      <Footer />
     </div>
-  );
+  )
 }
+
+export default App
