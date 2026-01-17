@@ -15,6 +15,7 @@ export default function DataCleaner({ onBack }) {
   const [generatedCode, setGeneratedCode] = useState("");
   const [result, setResult] = useState(null);
   const [mode, setMode] = useState("interactive"); // interactive | quick
+  const [originalFilename, setOriginalFilename] = useState("");
 
   // Handle file upload
   const handleUpload = async (file) => {
@@ -32,6 +33,7 @@ export default function DataCleaner({ onBack }) {
         const data = await uploadFile(file);
         setSessionId(data.session_id);
         setUploadData(data);
+        setOriginalFilename(file.name);
         setStep("preview");
       }
     } catch (err) {
@@ -75,14 +77,39 @@ export default function DataCleaner({ onBack }) {
     }
   };
 
-  // Download result
+  // Download result as CSV
   const handleDownload = () => {
-    const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json" });
+    if (!result.data || result.data.length === 0) return;
+    
+    // Get headers from first row
+    const headers = Object.keys(result.data[0]);
+    
+    // Convert to CSV
+    const csvRows = [
+      headers.join(','), // header row
+      ...result.data.map(row => 
+        headers.map(header => {
+          const val = row[header];
+          // Handle values with commas or quotes
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+            return `"${val.replace(/"/g, '""')}"`;
+          }
+          return val ?? '';
+        }).join(',')
+      )
+    ];
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "cleaned_data.json";
+    
+    // Use original filename with _cleaned suffix
+    const baseName = originalFilename.replace(/\.[^/.]+$/, "") || "data";
+    a.download = `${baseName}_cleaned.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Reset to start
@@ -94,6 +121,7 @@ export default function DataCleaner({ onBack }) {
     setGeneratedCode("");
     setResult(null);
     setError(null);
+    setOriginalFilename("");
   };
 
   return (
@@ -360,13 +388,31 @@ export default function DataCleaner({ onBack }) {
               </div>
             )}
 
-            <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
-              <h4 className="text-gray-400 text-sm mb-2">Data Preview:</h4>
-              <pre className="text-green-400 text-sm font-mono">
-                {JSON.stringify(result.data?.slice(0, 20) || result.data, null, 2)}
-              </pre>
+            {/* Data Table Preview */}
+            <div className="bg-white border rounded-lg overflow-hidden">
+              <h4 className="text-gray-600 text-sm p-3 border-b bg-gray-50">Data Preview (first 20 rows)</h4>
+              <div className="overflow-x-auto max-h-96">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 sticky top-0">
+                    <tr>
+                      {result.columns?.map((col, i) => (
+                        <th key={i} className="px-4 py-2 text-left font-medium text-gray-700 border-b">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.data?.slice(0, 20).map((row, i) => (
+                      <tr key={i} className="border-b hover:bg-gray-50">
+                        {result.columns?.map((col, j) => (
+                          <td key={j} className="px-4 py-2 text-gray-600">{row[col] ?? ''}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {result.data?.length > 20 && (
-                <p className="text-gray-500 mt-2">... and {result.data.length - 20} more rows</p>
+                <p className="text-gray-500 text-sm p-3 border-t">... and {result.data.length - 20} more rows</p>
               )}
             </div>
 
@@ -376,7 +422,7 @@ export default function DataCleaner({ onBack }) {
                 className="px-6 py-3 bg-black text-white rounded-lg font-medium flex items-center gap-2 hover:bg-gray-800 transition"
               >
                 <Download size={18} />
-                Download JSON
+                Download CSV
               </button>
               <button
                 onClick={handleReset}
