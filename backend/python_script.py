@@ -281,7 +281,7 @@ def clean_csv(input_path: str, output_path: str = None) -> pd.DataFrame:
     
     # Print stats
     stats = cleaner.get_stats()
-    print(f"\n📊 Cleaning Statistics:")
+    print("\n Cleaning Statistics:")
     for key, value in stats.items():
         print(f"   {key}: {value}")
     
@@ -299,7 +299,7 @@ def clean_json_file(input_path: str, output_path: str = None) -> Union[Dict, Lis
     
     # Clean
     cleaned_data = cleaner.clean_json(data)
-    print(f"🧹 Data cleaned successfully")
+    print("Data cleaned successfully")
     
     # Save if output path provided
     if output_path:
@@ -309,7 +309,7 @@ def clean_json_file(input_path: str, output_path: str = None) -> Union[Dict, Lis
     
     # Print stats
     stats = cleaner.get_stats()
-    print(f"\n📊 Cleaning Statistics:")
+    print("\n Cleaning Statistics:")
     for key, value in stats.items():
         print(f"   {key}: {value}")
     
@@ -342,9 +342,9 @@ def main():
         base = args.input.rsplit('.', 1)[0]
         output_path = f"{base}_cleaned.{file_format}"
     
-    print(f"🧹 Deterministic Data Cleaner")
-    print(f"   No AI • No Hallucinations • Pure Rules")
-    print(f"=" * 50)
+    print("🧹 Deterministic Data Cleaner")
+    print("   No AI • No Hallucinations • Pure Rules")
+    print("=" * 50)
     
     # Clean based on format
     if file_format == 'csv':
@@ -352,7 +352,7 @@ def main():
     else:
         clean_json_file(args.input, output_path)
     
-    print(f"\n✅ Done!")
+    print("\n Done!")
 
 
 if __name__ == '__main__':

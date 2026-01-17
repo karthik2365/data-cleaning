@@ -1,7 +1,7 @@
 """Deterministic Data Cleaner - No AI, No Hallucinations"""
 import re
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 
 class RecordCleaner:

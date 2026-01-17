@@ -2,7 +2,7 @@
 Code Generator Module
 Uses Gemma to generate safe Python code for data cleaning, analysis, and ML tasks.
 """
-from app.config import ENABLE_GEMMA, MODEL_NAME
+from app.config import ENABLE_GEMMA
 
 # System prompt for code generation
 CODE_GEN_PROMPT = """You are a Python code generator for data operations.

@@ -80,7 +80,7 @@ export default function DataCleaner({ onBack }) {
   // Download result as CSV
   const handleDownload = () => {
     if (!result.data || result.data.length === 0) return;
-    
+
     // Get headers from first row
     const headers = Object.keys(result.data[0]);
     
