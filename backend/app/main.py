@@ -11,7 +11,26 @@ import csv
 import io
 import json
 
-app = FastAPI(title="Gemma Data Cleaner")
+app = FastAPI(
+    title="Local AI Data Processor",
+    description="""
+    A local, AI-assisted data processing API where users upload datasets 
+    and describe transformations in natural language.
+    
+    ## Architecture
+    - **Local Gemma SLM**: Runs entirely on your machine - no data leaves your computer
+    - **Human-in-the-Loop**: Review and approve generated code before execution
+    - **Safe Execution**: Code runs in a sandboxed environment with strict validation
+    - **Reproducible**: Same inputs always produce same outputs
+    
+    ## Workflow
+    1. Upload a dataset (CSV, JSON, Excel)
+    2. Describe your transformation in plain English
+    3. Review the generated Python/pandas code
+    4. Execute and download the processed data
+    """,
+    version="1.0.0"
+)
 
 
 app.add_middleware(

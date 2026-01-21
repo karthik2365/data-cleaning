@@ -136,30 +136,28 @@ export default function DataCleaner({ onBack }) {
           Back to Home
         </button>
         
-        <h1 className="text-4xl font-bold mb-2">🧹 Gemma Data Cleaner</h1>
-        <p className="text-lg text-gray-600 mb-8">Upload data → Describe cleaning → Get results</p>
+        <h1 className="text-4xl font-bold mb-2">� Local AI Data Processor</h1>
+        <p className="text-lg text-gray-600 mb-8">Upload data → Describe transformation in plain English → Review generated code → Execute safely</p>
 
         {/* Mode Toggle */}
         <div className="flex gap-4 mb-8">
           <button
             onClick={() => setMode("interactive")}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              mode === "interactive" 
+            className={`px-4 py-2 rounded-lg font-medium transition ${mode === "interactive" 
                 ? "bg-black text-white" 
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            Interactive Mode
+            🤖 AI-Assisted (Local Gemma)
           </button>
           <button
             onClick={() => setMode("quick")}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              mode === "quick" 
+            className={`px-4 py-2 rounded-lg font-medium transition ${mode === "quick" 
                 ? "bg-black text-white" 
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            Quick Clean (No AI)
+            ⚡ Quick Clean (Rule-Based)
           </button>
         </div>
 
@@ -329,13 +327,22 @@ export default function DataCleaner({ onBack }) {
         {/* Step: Code Review */}
         {step === "code" && (
           <div className="space-y-6">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <h4 className="font-semibold text-amber-800 mb-2">🔍 Human-in-the-Loop: Review Before Execution</h4>
+              <p className="text-sm text-amber-700">
+                The local Gemma model generated this code based on your request. 
+                Please review it carefully. You can edit the code before executing. 
+                Nothing runs until you approve it.
+              </p>
+            </div>
+            
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Code size={18} />
-                Generated Python Code
+                Generated Python Code (pandas)
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Review the code below. You can edit it before executing.
+                This code was generated locally by Gemma. Your data never left your machine.
               </p>
               <textarea
                 value={generatedCode}

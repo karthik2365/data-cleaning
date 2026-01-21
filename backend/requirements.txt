@@ -1,18 +1,25 @@
+# ==============================================
+# Local AI Data Processor - Dependencies
+# ==============================================
+
+# Web Framework
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 pydantic[email]
 python-multipart
 
+# Data Processing
 pandas
 numpy
 openpyxl
-pdfplumber
-python-docx
 scikit-learn
 
+# Local AI (Gemma SLM)
 torch
-transformers
+transformers>=4.40.0
 accelerate
-bitsandbytes
 sentencepiece
+
+# Optional: For GPU acceleration (uncomment if you have CUDA)
+# bitsandbytes

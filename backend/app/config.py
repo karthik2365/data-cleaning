@@ -1,20 +1,33 @@
 # Gemma Data Cleaner Configuration
+# ============================================================
+# Local AI-Assisted Data Processing
+# ============================================================
+# This application uses a Small Language Model (Gemma) running LOCALLY
+# to generate safe Python (pandas) code based on user's natural language
+# requests. All processing happens offline - no data leaves your machine.
+#
+# Human-in-the-loop design:
+# - Gemma generates code, but never executes it directly
+# - Users review and approve generated code before execution
+# - Full transparency and reproducibility
+# ============================================================
 
 # ============================================================
 # AI CONFIGURATION
 # ============================================================
-# Set to True to enable Gemma for semantic tasks (schema mapping, 
-# unstructured text extraction). Set to False for pure deterministic
-# cleaning with zero AI involvement.
-ENABLE_GEMMA = False
+# Enable Gemma for natural language to code translation.
+# When True: Uses local Gemma model to interpret user requests
+# When False: Falls back to keyword-based code generation
+ENABLE_GEMMA = True
 
-# Model settings (only used when ENABLE_GEMMA = True)
-MODEL_NAME = "google/gemma-3-270m"
+# Model settings - Gemma runs locally for privacy and offline use
+MODEL_NAME = "google/gemma3:1b"  # Instruction-tuned Gemma 2 for better code generation
 
 GENERATION_CONFIG = {
-    "max_new_tokens": 256,
-    "do_sample": False,
-    "pad_token_id": None  # Will be set from tokenizer
+    "max_new_tokens": 512,       # Allow longer code generation
+    "do_sample": False,          # Deterministic output for reproducibility
+    "temperature": 0.1,          # Low temperature for consistent code
+    "pad_token_id": None         # Will be set from tokenizer
 }
 
 # ============================================================
