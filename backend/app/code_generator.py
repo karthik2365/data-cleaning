@@ -38,130 +38,79 @@ from app.config import ENABLE_GEMMA
 
 
 # ============================================================
-# SYSTEM PROMPT - FLEXIBLE CODE GENERATION
+# SYSTEM PROMPT - OPTIMIZED FOR GEMMA CODE GENERATION
 # ============================================================
 
-CODE_GEN_PROMPT = """
-You are an expert Python code generator for data processing tasks.
+CODE_GEN_PROMPT = """You are a Python pandas code generator. Generate ONLY executable Python code.
 
-A pandas DataFrame named `df` already exists with the schema and sample data shown below.
-The user will describe what they want to do with the dataset in natural language.
+CONTEXT:
+- DataFrame `df` exists with the columns shown in SCHEMA
+- Libraries available: pd (pandas), np (numpy)
+- You must output ONLY Python code, nothing else
 
-YOUR GOAL: Generate working Python code that accomplishes EXACTLY what the user asks for.
-Be helpful and try your best to fulfill the user's request.
+TASK: Read the USER REQUEST and generate the exact pandas code to accomplish it.
 
-------------------------------------------------
-CAPABILITIES
-------------------------------------------------
+CODE PATTERNS (use these exact patterns):
 
-You can generate code for ANY of the following:
+1. TYPE CONVERSIONS:
+   - "convert X to integer" → df['X'] = pd.to_numeric(df['X'], errors='coerce').round().astype('Int64')
+   - "convert X to float" → df['X'] = pd.to_numeric(df['X'], errors='coerce')
+   - "convert X to string" → df['X'] = df['X'].astype(str)
+   - "convert X to datetime" → df['X'] = pd.to_datetime(df['X'], errors='coerce')
 
-1. DATA CLEANING
-   - Remove duplicates (df.drop_duplicates())
-   - Handle missing values (dropna, fillna with values/methods like ffill, bfill, mean, median)
-   - Remove/replace invalid values
-   - Normalize text (lowercase, uppercase, title case, strip whitespace)
-   - Standardize dates, emails, phone numbers
-   - Filter rows based on conditions
-   - Remove outliers
+2. MISSING VALUES:
+   - "remove/drop nulls" → df = df.dropna()
+   - "drop nulls in X" → df = df.dropna(subset=['X'])
+   - "fill nulls with 0" → df = df.fillna(0)
+   - "fill X with mean" → df['X'] = df['X'].fillna(df['X'].mean())
+   - "fill X with median" → df['X'] = df['X'].fillna(df['X'].median())
 
-2. DATA TRANSFORMATION
-   - Select or drop columns
-   - Rename columns
-   - Create new columns (calculated fields, combinations, etc.)
-   - Type conversions (to_numeric, to_datetime, astype)
-   - String operations (split, replace, extract, contains)
-   - Apply functions to columns
-   - Merge/concatenate operations on the same df
-   - Pivot, melt, reshape data
-   - Sort values
-   - Reset index
+3. DUPLICATES:
+   - "remove duplicates" → df = df.drop_duplicates()
+   - "remove duplicate X" → df = df.drop_duplicates(subset=['X'])
 
-3. DATA ANALYSIS
-   - Aggregations (sum, mean, count, min, max, std, var)
-   - Groupby operations with any aggregation
-   - Value counts
-   - Describe statistics
-   - Correlation
-   - Conditional statistics
+4. TEXT OPERATIONS:
+   - "lowercase X" → df['X'] = df['X'].astype(str).str.lower()
+   - "uppercase X" → df['X'] = df['X'].astype(str).str.upper()
+   - "trim/strip X" → df['X'] = df['X'].astype(str).str.strip()
+   - "title case X" → df['X'] = df['X'].astype(str).str.title()
 
-4. FEATURE ENGINEERING
-   - Create bins/categories (pd.cut, pd.qcut)
-   - One-hot encoding (pd.get_dummies)
-   - Label encoding
-   - Date feature extraction (year, month, day, weekday, etc.)
-   - Text feature extraction
-   - Mathematical transformations (log, sqrt, power, etc.)
+5. FILTERING:
+   - "filter where X > 10" → df = df[df['X'] > 10]
+   - "filter where X == 'value'" → df = df[df['X'] == 'value']
+   - "remove rows where X is null" → df = df[df['X'].notna()]
+   - "keep rows where X contains 'text'" → df = df[df['X'].str.contains('text', na=False)]
 
-5. MACHINE LEARNING (when requested)
-   - Train regression models (LinearRegression)
-   - Train classification models
-   - Generate predictions and add as new column
-   - Store metrics in `result` variable
+6. COLUMNS:
+   - "drop column X" → df = df.drop(columns=['X'])
+   - "keep only X and Y" → df = df[['X', 'Y']]
+   - "rename X to Y" → df = df.rename(columns={'X': 'Y'})
+   - "create column Z = X + Y" → df['Z'] = df['X'] + df['Y']
 
-------------------------------------------------
-RULES
-------------------------------------------------
+7. SORTING:
+   - "sort by X" → df = df.sort_values('X')
+   - "sort by X descending" → df = df.sort_values('X', ascending=False)
 
-MUST DO:
-- Assume `df` already exists (never create it)
-- Use pandas (`pd`) and numpy (`np`) - they are pre-imported
-- Assign the final result back to `df`
-- Use actual column names from the schema provided
-- Write clean, working code
+8. AGGREGATIONS:
+   - "group by X and sum Y" → df = df.groupby('X')['Y'].sum().reset_index()
+   - "group by X and count" → df = df.groupby('X').size().reset_index(name='count')
+   - "average of X" → df = pd.DataFrame({'average': [df['X'].mean()]})
 
-MUST NOT:
-- Import any libraries (pd, np are already available)
-- Load or save files
-- Use os, sys, subprocess, eval, exec
-- Print anything
-- Add comments or explanations
+9. DATE OPERATIONS:
+   - "extract year from X" → df['year'] = pd.to_datetime(df['X']).dt.year
+   - "extract month from X" → df['month'] = pd.to_datetime(df['X']).dt.month
 
-------------------------------------------------
-AVAILABLE VARIABLES
-------------------------------------------------
+10. MATH:
+    - "log of X" → df['X_log'] = np.log(df['X'] + 1)
+    - "square root of X" → df['X_sqrt'] = np.sqrt(df['X'])
+    - "normalize X" → df['X'] = (df['X'] - df['X'].min()) / (df['X'].max() - df['X'].min())
 
-- `df` : The pandas DataFrame
-- `pd` : pandas library
-- `np` : numpy library
-- `LinearRegression` : sklearn LinearRegression (for ML tasks)
-- `train_test_split` : sklearn train_test_split (for ML tasks)
+CRITICAL RULES:
+- Output ONLY Python code
+- NO markdown, NO explanations, NO comments
+- Use column names from the SCHEMA exactly as shown
+- Always assign result back to df
 
-------------------------------------------------
-OUTPUT FORMAT
-------------------------------------------------
-
-Return ONLY valid Python code.
-No markdown code fences.
-No explanations.
-No comments.
-Just pure Python code that works.
-
-------------------------------------------------
-EXAMPLES OF GOOD OUTPUT
-------------------------------------------------
-
-For "remove duplicates":
-df = df.drop_duplicates()
-
-For "fill missing values in age with the mean":
-df['age'] = df['age'].fillna(df['age'].mean())
-
-For "convert name to lowercase":
-df['name'] = df['name'].str.lower()
-
-For "filter rows where price > 100":
-df = df[df['price'] > 100]
-
-For "create a new column total = price * quantity":
-df['total'] = df['price'] * df['quantity']
-
-For "group by category and get average price":
-df = df.groupby('category')['price'].mean().reset_index()
-
-------------------------------------------------
-NOW GENERATE CODE FOR THE USER'S REQUEST
-------------------------------------------------
 """
 
 
@@ -176,25 +125,28 @@ def generate_cleaning_code(schema: dict, sample_data: list, user_request: str) -
     if not ENABLE_GEMMA:
         return _generate_fallback_code(user_request, schema)
 
+    # Build a cleaner, more focused prompt for Gemma
+    columns_list = ", ".join(schema.keys())
+    
     prompt = f"""{CODE_GEN_PROMPT}
+SCHEMA (columns available): {columns_list}
 
-DATASET SCHEMA:
-{_format_schema(schema)}
+USER REQUEST: {user_request}
 
-SAMPLE DATA (first 10 rows):
-{_format_sample(sample_data)}
-
-USER REQUEST:
-{user_request}
-
-PYTHON CODE:
-"""
+Python code:
+df"""
 
     try:
         from app.model import run_gemma
         code = run_gemma(prompt)
-        return _validate_code(code)
-    except Exception:
+        code = _validate_code(code)
+        
+        # Ensure code starts with df if model didn't include it
+        if code and not code.strip().startswith('df'):
+            code = 'df' + code
+            
+        return code
+    except Exception as e:
         return _generate_fallback_code(user_request, schema)
 
 
@@ -258,54 +210,94 @@ def _generate_fallback_code(user_request: str, schema: dict) -> str:
     Expanded keyword-based fallback when Gemma is disabled.
     Tries to fulfill common requests without AI.
     """
+    import re as regex
+    
     req = user_request.lower()
     columns = list(schema.keys())
     code = []
+    
+    # Helper to find column mentioned in request
+    def find_column(request):
+        for c in columns:
+            if c.lower() in request:
+                return c
+        return None
+
+    # TYPE CONVERSIONS
+    if any(x in req for x in ["convert", "to integer", "to int", "to numeric", "to float", "to string", "to datetime", "to date"]):
+        col = find_column(req)
+        if col:
+            if any(x in req for x in ["integer", "int"]):
+                code.append(f"df['{col}'] = pd.to_numeric(df['{col}'], errors='coerce').round().astype('Int64')")
+            elif "float" in req or "numeric" in req:
+                code.append(f"df['{col}'] = pd.to_numeric(df['{col}'], errors='coerce')")
+            elif "string" in req or "str" in req:
+                code.append(f"df['{col}'] = df['{col}'].astype(str)")
+            elif any(x in req for x in ["datetime", "date"]):
+                code.append(f"df['{col}'] = pd.to_datetime(df['{col}'], errors='coerce')")
 
     # DROP NULLS / MISSING VALUES
-    if any(x in req for x in ["drop null", "remove null", "dropna", "drop missing", "remove missing"]):
-        cols = [c for c in columns if c.lower() in req]
-        if cols:
-            code.append(f"df = df.dropna(subset={cols})")
+    if any(x in req for x in ["drop null", "remove null", "dropna", "drop missing", "remove missing", "remove rows with null", "drop rows with null"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df = df.dropna(subset=['{col}'])")
         else:
             code.append("df = df.dropna()")
 
     # FILL NULLS / MISSING VALUES
     if any(x in req for x in ["fill null", "fill missing", "fillna", "replace null", "replace missing"]):
-        if "mean" in req:
-            for c in columns:
-                if c.lower() in req:
-                    code.append(f"df['{c}'] = df['{c}'].fillna(df['{c}'].mean())")
-        elif "median" in req:
-            for c in columns:
-                if c.lower() in req:
-                    code.append(f"df['{c}'] = df['{c}'].fillna(df['{c}'].median())")
+        col = find_column(req)
+        if "mean" in req and col:
+            code.append(f"df['{col}'] = df['{col}'].fillna(df['{col}'].mean())")
+        elif "median" in req and col:
+            code.append(f"df['{col}'] = df['{col}'].fillna(df['{col}'].median())")
         elif "0" in req or "zero" in req:
-            code.append("df = df.fillna(0)")
+            if col:
+                code.append(f"df['{col}'] = df['{col}'].fillna(0)")
+            else:
+                code.append("df = df.fillna(0)")
         else:
             code.append("df = df.fillna(0)")
 
     # REMOVE DUPLICATES
     if "duplicate" in req:
-        code.append("df = df.drop_duplicates()")
+        col = find_column(req)
+        if col:
+            code.append(f"df = df.drop_duplicates(subset=['{col}'])")
+        else:
+            code.append("df = df.drop_duplicates()")
 
     # LOWERCASE
-    if "lowercase" in req or "lower case" in req:
-        for c in columns:
-            if c.lower() in req or "all" in req:
-                code.append(f"df['{c}'] = df['{c}'].astype(str).str.lower()")
+    if any(x in req for x in ["lowercase", "lower case", "to lower"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df['{col}'] = df['{col}'].astype(str).str.lower()")
+        else:
+            for c in columns:
+                if schema.get(c) == 'object':
+                    code.append(f"df['{c}'] = df['{c}'].astype(str).str.lower()")
 
     # UPPERCASE
-    if "uppercase" in req or "upper case" in req:
-        for c in columns:
-            if c.lower() in req or "all" in req:
-                code.append(f"df['{c}'] = df['{c}'].astype(str).str.upper()")
+    if any(x in req for x in ["uppercase", "upper case", "to upper"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df['{col}'] = df['{col}'].astype(str).str.upper()")
+
+    # TITLE CASE
+    if any(x in req for x in ["title case", "capitalize", "title"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df['{col}'] = df['{col}'].astype(str).str.title()")
 
     # TRIM / STRIP WHITESPACE
     if any(x in req for x in ["trim", "strip", "whitespace"]):
-        for c in columns:
-            if c.lower() in req or "all" in req:
-                code.append(f"df['{c}'] = df['{c}'].astype(str).str.strip()")
+        col = find_column(req)
+        if col:
+            code.append(f"df['{col}'] = df['{col}'].astype(str).str.strip()")
+        else:
+            for c in columns:
+                if schema.get(c) == 'object':
+                    code.append(f"df['{c}'] = df['{c}'].astype(str).str.strip()")
 
     # KEEP ONLY COLUMNS
     if any(x in req for x in ["keep only", "select only", "only keep", "select columns"]):
@@ -319,35 +311,83 @@ def _generate_fallback_code(user_request: str, schema: dict) -> str:
         if drop:
             code.append(f"df = df.drop(columns={drop})")
 
-    # RENAME COLUMN
+    # RENAME COLUMN (try to extract "rename X to Y" pattern)
     if "rename" in req:
-        # Try to extract "rename X to Y" pattern
-        pass  # Complex - leave to AI
+        match = regex.search(r'rename\s+(\w+)\s+to\s+(\w+)', req)
+        if match:
+            old_name = match.group(1)
+            new_name = match.group(2)
+            # Find actual column name (case-insensitive)
+            actual_col = None
+            for c in columns:
+                if c.lower() == old_name.lower():
+                    actual_col = c
+                    break
+            if actual_col:
+                code.append(f"df = df.rename(columns={{'{actual_col}': '{new_name}'}})")
 
     # SORT
     if "sort" in req:
-        for c in columns:
-            if c.lower() in req:
-                if "desc" in req or "descending" in req:
-                    code.append(f"df = df.sort_values('{c}', ascending=False)")
-                else:
-                    code.append(f"df = df.sort_values('{c}')")
-                break
+        col = find_column(req)
+        if col:
+            if any(x in req for x in ["desc", "descending", "high to low", "largest", "biggest"]):
+                code.append(f"df = df.sort_values('{col}', ascending=False)")
+            else:
+                code.append(f"df = df.sort_values('{col}')")
 
-    # FILTER
-    if "filter" in req or "where" in req:
-        # Try to extract filter conditions
-        import re as regex
+    # FILTER / WHERE
+    if any(x in req for x in ["filter", "where", "keep rows", "remove rows"]):
+        col = find_column(req)
+        if col:
+            # Try to extract numeric conditions
+            match = regex.search(r'>\s*=?\s*(\d+\.?\d*)', req)
+            if match:
+                code.append(f"df = df[df['{col}'] >= {match.group(1)}]" if ">=" in req else f"df = df[df['{col}'] > {match.group(1)}]")
+            else:
+                match = regex.search(r'<\s*=?\s*(\d+\.?\d*)', req)
+                if match:
+                    code.append(f"df = df[df['{col}'] <= {match.group(1)}]" if "<=" in req else f"df = df[df['{col}'] < {match.group(1)}]")
+                else:
+                    match = regex.search(r'==?\s*(\d+\.?\d*)', req)
+                    if match:
+                        code.append(f"df = df[df['{col}'] == {match.group(1)}]")
+
+    # EXTRACT YEAR/MONTH/DAY
+    if any(x in req for x in ["extract year", "get year", "year from"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df['year'] = pd.to_datetime(df['{col}']).dt.year")
+    if any(x in req for x in ["extract month", "get month", "month from"]):
+        col = find_column(req)
+        if col:
+            code.append(f"df['month'] = pd.to_datetime(df['{col}']).dt.month")
+
+    # GROUP BY
+    if "group by" in req or "groupby" in req:
+        # Try to extract group by column and aggregation
+        group_col = None
+        agg_col = None
         for c in columns:
             if c.lower() in req:
-                if ">" in req:
-                    match = regex.search(r'>\s*(\d+)', req)
-                    if match:
-                        code.append(f"df = df[df['{c}'] > {match.group(1)}]")
-                elif "<" in req:
-                    match = regex.search(r'<\s*(\d+)', req)
-                    if match:
-                        code.append(f"df = df[df['{c}'] < {match.group(1)}]")
+                if group_col is None:
+                    group_col = c
+                else:
+                    agg_col = c
+        if group_col:
+            if "sum" in req:
+                if agg_col:
+                    code.append(f"df = df.groupby('{group_col}')['{agg_col}'].sum().reset_index()")
+                else:
+                    code.append(f"df = df.groupby('{group_col}').sum().reset_index()")
+            elif "mean" in req or "average" in req:
+                if agg_col:
+                    code.append(f"df = df.groupby('{group_col}')['{agg_col}'].mean().reset_index()")
+                else:
+                    code.append(f"df = df.groupby('{group_col}').mean().reset_index()")
+            elif "count" in req:
+                code.append(f"df = df.groupby('{group_col}').size().reset_index(name='count')")
+            else:
+                code.append(f"df = df.groupby('{group_col}').size().reset_index(name='count')")
 
     # SIMPLE ML (PREDICT)
     if "predict" in req and "using" in req:
