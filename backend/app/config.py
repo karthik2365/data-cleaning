@@ -15,19 +15,30 @@
 # ============================================================
 # AI CONFIGURATION
 # ============================================================
-# Enable Gemma for natural language to code translation.
-# When True: Uses local Gemma model to interpret user requests
+# Enable LLM for natural language to code translation.
+# When True: Uses local LLM model to interpret user requests
 # When False: Falls back to keyword-based code generation
-ENABLE_GEMMA = True
+ENABLE_LLM = True
 
-# Model settings - Gemma runs locally for privacy and offline use
-MODEL_NAME = "google/gemma3:1b"  # Instruction-tuned Gemma 2 for better code generation
+# ============================================================
+# MODEL SETTINGS - CHANGE MODEL NAME HERE
+# ============================================================
+# To change the model, simply update MODEL_NAME below.
+# Available Ollama models: llama3.2, llama3.2:1b, llama3.2:3b, 
+#                          codellama, mistral, etc.
+# Run 'ollama list' to see installed models
+# Run 'ollama pull <model_name>' to download new models
+MODEL_NAME = "llama3.2"  # <-- CHANGE MODEL HERE
 
+# Ollama API endpoint (change if running Ollama on different host/port)
+OLLAMA_BASE_URL = "http://localhost:11434"
+
+# Generation settings for Ollama
 GENERATION_CONFIG = {
-    "max_new_tokens": 512,       # Allow longer code generation
-    "do_sample": False,          # Deterministic output for reproducibility
     "temperature": 0.1,          # Low temperature for consistent code
-    "pad_token_id": None         # Will be set from tokenizer
+    "num_predict": 512,          # Max tokens to generate
+    "top_p": 0.9,                # Nucleus sampling
+    "stop": ["```", "\n\n\n"]    # Stop sequences
 }
 
 # ============================================================

@@ -34,84 +34,81 @@ OFFLINE EXECUTION
 
 """
 
-from app.config import ENABLE_GEMMA
+from app.config import ENABLE_LLM
 
 
 # ============================================================
-# SYSTEM PROMPT - OPTIMIZED FOR GEMMA CODE GENERATION
+# SYSTEM PROMPT - OPTIMIZED FOR LLAMA 3.2 CODE GENERATION
+# ============================================================
+# To tune the prompt, modify the CODE_GEN_PROMPT below.
+# Tips for better results:
+# - Be specific about output format
+# - Provide clear examples
+# - Use role-based prompting ("You are a...")
 # ============================================================
 
-CODE_GEN_PROMPT = """You are a Python pandas code generator. Generate ONLY executable Python code.
+CODE_GEN_PROMPT = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+You are an expert Python pandas code generator. Your ONLY job is to output clean, executable Python code.
 
-CONTEXT:
-- DataFrame `df` exists with the columns shown in SCHEMA
-- Libraries available: pd (pandas), np (numpy)
-- You must output ONLY Python code, nothing else
+RULES:
+1. Output ONLY Python code - no markdown, no explanations, no comments
+2. The DataFrame is named `df` and already exists
+3. Available libraries: `pd` (pandas), `np` (numpy)
+4. Always assign results back to `df`
+5. Use exact column names from the SCHEMA provided
 
-TASK: Read the USER REQUEST and generate the exact pandas code to accomplish it.
+CODE PATTERNS:
 
-CODE PATTERNS (use these exact patterns):
+• Type Conversions:
+  - to integer: df['col'] = pd.to_numeric(df['col'], errors='coerce').astype('Int64')
+  - to float: df['col'] = pd.to_numeric(df['col'], errors='coerce')
+  - to string: df['col'] = df['col'].astype(str)
+  - to datetime: df['col'] = pd.to_datetime(df['col'], errors='coerce')
 
-1. TYPE CONVERSIONS:
-   - "convert X to integer" → df['X'] = pd.to_numeric(df['X'], errors='coerce').round().astype('Int64')
-   - "convert X to float" → df['X'] = pd.to_numeric(df['X'], errors='coerce')
-   - "convert X to string" → df['X'] = df['X'].astype(str)
-   - "convert X to datetime" → df['X'] = pd.to_datetime(df['X'], errors='coerce')
+• Missing Values:
+  - drop all nulls: df = df.dropna()
+  - drop nulls in column: df = df.dropna(subset=['col'])
+  - fill with value: df = df.fillna(0)
+  - fill with mean: df['col'] = df['col'].fillna(df['col'].mean())
+  - fill with median: df['col'] = df['col'].fillna(df['col'].median())
 
-2. MISSING VALUES:
-   - "remove/drop nulls" → df = df.dropna()
-   - "drop nulls in X" → df = df.dropna(subset=['X'])
-   - "fill nulls with 0" → df = df.fillna(0)
-   - "fill X with mean" → df['X'] = df['X'].fillna(df['X'].mean())
-   - "fill X with median" → df['X'] = df['X'].fillna(df['X'].median())
+• Duplicates:
+  - remove all: df = df.drop_duplicates()
+  - remove by column: df = df.drop_duplicates(subset=['col'])
 
-3. DUPLICATES:
-   - "remove duplicates" → df = df.drop_duplicates()
-   - "remove duplicate X" → df = df.drop_duplicates(subset=['X'])
+• Text Operations:
+  - lowercase: df['col'] = df['col'].astype(str).str.lower()
+  - uppercase: df['col'] = df['col'].astype(str).str.upper()
+  - strip whitespace: df['col'] = df['col'].astype(str).str.strip()
+  - title case: df['col'] = df['col'].astype(str).str.title()
 
-4. TEXT OPERATIONS:
-   - "lowercase X" → df['X'] = df['X'].astype(str).str.lower()
-   - "uppercase X" → df['X'] = df['X'].astype(str).str.upper()
-   - "trim/strip X" → df['X'] = df['X'].astype(str).str.strip()
-   - "title case X" → df['X'] = df['X'].astype(str).str.title()
+• Filtering:
+  - numeric filter: df = df[df['col'] > 10]
+  - string filter: df = df[df['col'] == 'value']
+  - contains: df = df[df['col'].str.contains('text', na=False)]
+  - not null: df = df[df['col'].notna()]
 
-5. FILTERING:
-   - "filter where X > 10" → df = df[df['X'] > 10]
-   - "filter where X == 'value'" → df = df[df['X'] == 'value']
-   - "remove rows where X is null" → df = df[df['X'].notna()]
-   - "keep rows where X contains 'text'" → df = df[df['X'].str.contains('text', na=False)]
+• Columns:
+  - drop: df = df.drop(columns=['col'])
+  - keep only: df = df[['col1', 'col2']]
+  - rename: df = df.rename(columns={{'old_name': 'new_name'}})
+  - create: df['new'] = df['col1'] + df['col2']
 
-6. COLUMNS:
-   - "drop column X" → df = df.drop(columns=['X'])
-   - "keep only X and Y" → df = df[['X', 'Y']]
-   - "rename X to Y" → df = df.rename(columns={'X': 'Y'})
-   - "create column Z = X + Y" → df['Z'] = df['X'] + df['Y']
+• Sorting:
+  - ascending: df = df.sort_values('col')
+  - descending: df = df.sort_values('col', ascending=False)
 
-7. SORTING:
-   - "sort by X" → df = df.sort_values('X')
-   - "sort by X descending" → df = df.sort_values('X', ascending=False)
+• Aggregations:
+  - group and sum: df = df.groupby('col1')['col2'].sum().reset_index()
+  - group and count: df = df.groupby('col').size().reset_index(name='count')
+<|eot_id|><|start_header_id|>user<|end_header_id|>
+SCHEMA (available columns): {columns}
 
-8. AGGREGATIONS:
-   - "group by X and sum Y" → df = df.groupby('X')['Y'].sum().reset_index()
-   - "group by X and count" → df = df.groupby('X').size().reset_index(name='count')
-   - "average of X" → df = pd.DataFrame({'average': [df['X'].mean()]})
+TASK: {request}
 
-9. DATE OPERATIONS:
-   - "extract year from X" → df['year'] = pd.to_datetime(df['X']).dt.year
-   - "extract month from X" → df['month'] = pd.to_datetime(df['X']).dt.month
-
-10. MATH:
-    - "log of X" → df['X_log'] = np.log(df['X'] + 1)
-    - "square root of X" → df['X_sqrt'] = np.sqrt(df['X'])
-    - "normalize X" → df['X'] = (df['X'] - df['X'].min()) / (df['X'].max() - df['X'].min())
-
-CRITICAL RULES:
-- Output ONLY Python code
-- NO markdown, NO explanations, NO comments
-- Use column names from the SCHEMA exactly as shown
-- Always assign result back to df
-
-"""
+Output only the Python code:
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+"""""
 
 
 # ============================================================
@@ -122,23 +119,21 @@ def generate_cleaning_code(schema: dict, sample_data: list, user_request: str) -
     """
     Generate Python code based on user intent.
     """
-    if not ENABLE_GEMMA:
+    if not ENABLE_LLM:
         return _generate_fallback_code(user_request, schema)
 
-    # Build a cleaner, more focused prompt for Gemma
+    # Build a cleaner, more focused prompt for Llama 3.2
     columns_list = ", ".join(schema.keys())
     
-    prompt = f"""{CODE_GEN_PROMPT}
-SCHEMA (columns available): {columns_list}
-
-USER REQUEST: {user_request}
-
-Python code:
-df"""
+    # Format the prompt with schema and request
+    prompt = CODE_GEN_PROMPT.format(
+        columns=columns_list,
+        request=user_request
+    )
 
     try:
-        from app.model import run_gemma
-        code = run_gemma(prompt)
+        from app.model import run_llm
+        code = run_llm(prompt)
         code = _validate_code(code)
         
         # Ensure code starts with df if model didn't include it

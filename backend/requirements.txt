@@ -15,11 +15,10 @@ numpy
 openpyxl
 scikit-learn
 
-# Local AI (Gemma SLM)
-torch
-transformers>=4.40.0
-accelerate
-sentencepiece
+# Local AI via Ollama
+requests
 
-# Optional: For GPU acceleration (uncomment if you have CUDA)
-# bitsandbytes
+# Note: Make sure Ollama is installed and running
+# Install Ollama: https://ollama.ai
+# Pull the model: ollama pull llama3.2
+# Start Ollama: ollama serve
