@@ -55,7 +55,9 @@ RULES:
 2. The DataFrame is named `df` and already exists
 3. Available libraries: `pd` (pandas), `np` (numpy)
 4. Always assign results back to `df`
-5. Use exact column names from the SCHEMA provided
+5. Use EXACT column names from the SCHEMA provided
+6. ALWAYS use single quotes for column names: df['column_name']
+7. For columns with spaces or special characters, use quotes: df['S&P 500'] or df['My Column']
 
 CODE PATTERNS:
 
@@ -123,7 +125,8 @@ def generate_cleaning_code(schema: dict, sample_data: list, user_request: str) -
         return _generate_fallback_code(user_request, schema)
 
     # Build a cleaner, more focused prompt for Llama 3.2
-    columns_list = ", ".join(schema.keys())
+    # Format column names with quotes to show they need to be used exactly
+    columns_list = ", ".join([f"'{col}'" for col in schema.keys()])
     
     # Format the prompt with schema and request
     prompt = CODE_GEN_PROMPT.format(
